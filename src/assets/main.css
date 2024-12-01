@@ -10,16 +10,3 @@
 .title-arabic-text {
   font-family: "Reem Kufi", serif;
 }
-
-.back-surat,
-.next-surat {
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.back-surat:hover,
-.next-surat:hover {
-  text-decoration: none;
-  color: #adadad;
-  cursor: pointer;
-}

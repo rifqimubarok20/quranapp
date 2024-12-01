@@ -6,6 +6,7 @@ const route = useRoute();
 const router = useRouter();
 let nomorSurat = parseInt(route.params.nomor);
 const surat = ref(null);
+const tafsir = ref(null); // Untuk menyimpan data tafsir
 const error = ref(null);
 const isLoading = ref(true);
 const playingAyat = ref(null);
@@ -14,17 +15,22 @@ const selectedQori = ref("01");
 const searchQuery = ref("");
 const searchResultIndex = ref(null);
 
-console.log(searchQuery.value);
-
-const fetchAyat = async () => {
+const fetchData = async () => {
+  isLoading.value = true;
   try {
-    const response = await fetch(
-      `https://equran.id/api/v2/surat/${nomorSurat}`
-    );
-    const json = await response.json();
-    surat.value = json.data;
+    // Fetch Ayat dan Tafsir secara paralel
+    const [ayatResponse, tafsirResponse] = await Promise.all([
+      fetch(`https://equran.id/api/v2/surat/${nomorSurat}`),
+      fetch(`https://equran.id/api/v2/tafsir/${nomorSurat}`),
+    ]);
+
+    const ayatJson = await ayatResponse.json();
+    const tafsirJson = await tafsirResponse.json();
+
+    surat.value = ayatJson.data;
+    tafsir.value = tafsirJson.data;
   } catch (err) {
-    error.value = "Gagal memuat data ayat";
+    error.value = "Gagal memuat data";
   } finally {
     isLoading.value = false;
   }
@@ -33,14 +39,14 @@ const fetchAyat = async () => {
 const nextSuratHandler = async () => {
   nomorSurat++;
   router.push({ name: "Ayat", params: { nomor: nomorSurat } });
-  await fetchAyat();
+  await fetchData(); // Panggil fetchData untuk memperbarui ayat dan tafsir
 };
 
 const prevSuratHandler = async () => {
   if (nomorSurat > 1) {
     nomorSurat--;
     router.push({ name: "Ayat", params: { nomor: nomorSurat } });
-    await fetchAyat();
+    await fetchData();
   }
 };
 
@@ -102,7 +108,8 @@ watch(searchQuery, () => {
   }
 });
 
-onMounted(fetchAyat);
+// Panggil fetchData saat komponen dimuat
+onMounted(fetchData);
 
 function convertToArabicNumbers(number) {
   const arabicNumbers = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
@@ -117,6 +124,33 @@ function convertToArabicNumbers(number) {
 </script>
 
 <template>
+  <!-- Modal Deskripsi -->
+  <div
+    class="modal fade"
+    id="deskripsi"
+    tabindex="-1"
+    aria-labelledby="deskripsiLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="deskripsiLabel">
+            {{ surat?.namaLatin }} -
+            {{ surat?.nama }}
+          </h1>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body" v-html="surat?.deskripsi"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="container mt-4">
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
     <div v-else-if="isLoading" class="vh-100">
@@ -134,6 +168,13 @@ function convertToArabicNumbers(number) {
     <div v-else>
       <div class="text-center">
         <h2>
+          <sup class="info-surat">
+            <i
+              class="bi bi-info-circle-fill"
+              data-bs-toggle="modal"
+              data-bs-target="#deskripsi"
+            ></i>
+          </sup>
           {{ surat.namaLatin }}
           <span class="title-arabic-text fs-2">({{ surat.nama }})</span>
         </h2>
@@ -178,41 +219,44 @@ function convertToArabicNumbers(number) {
               </select>
             </div>
             <div class="col-2">
-              <h2 style="cursor: pointer" title="Play Audio Full">
+              <h1 class="play-audio-full" title="Play Audio Full">
                 <i
                   :class="
                     playingAyatFull?.audioUrl === surat.audioFull[selectedQori]
-                      ? 'bi bi-pause-circle-fill'
-                      : 'bi bi-play-circle-fill'
+                      ? 'bi bi-pause-btn-fill py-2'
+                      : 'bi bi-play-btn-fill py-2'
                   "
                   @click="toggleAudioFull(surat.audioFull[selectedQori])"
                 ></i>
-              </h2>
+              </h1>
             </div>
           </div>
         </div>
         <div class="col-md-4 col-9 mt-md-0 mt-2">
           <form class="d-flex" role="search" @submit.prevent>
             <input
-              class="form-control py-2"
+              class="form-control"
               type="number"
               placeholder="Cari Nomor Ayat..."
               aria-label="Search"
               v-model="searchQuery"
             />
+            <span class="icon-search"
+              ><i class="bi bi-search-heart-fill"></i
+            ></span>
           </form>
         </div>
         <div class="col-md-2 col-3 mt-md-0 mt-2">
-          <div class="d-flex justify-content-end gap-4 next-back">
-            <span class="fs-2">
+          <div class="d-flex justify-content-end gap-2 next-back">
+            <span class="btn-back-surat">
               <i
-                class="bi bi-arrow-left-circle back-surat"
+                class="bi bi-arrow-left-square back-surat"
                 @click="prevSuratHandler"
               ></i>
             </span>
-            <span class="fs-2">
+            <span class="btn-next-surat">
               <i
-                class="bi bi-arrow-right-circle-fill next-surat"
+                class="bi bi-arrow-right-square-fill next-surat"
                 @click="nextSuratHandler"
               ></i>
             </span>
@@ -239,8 +283,8 @@ function convertToArabicNumbers(number) {
                   <i
                     :class="
                       playingAyat?.ayatNomor === ayat.nomorAyat
-                        ? 'bi bi-pause-circle-fill'
-                        : 'bi bi-play-circle-fill'
+                        ? 'bi bi-pause-btn-fill'
+                        : 'bi bi-play-btn-fill'
                     "
                     style="cursor: pointer"
                     @click="
@@ -253,7 +297,43 @@ function convertToArabicNumbers(number) {
                 </h3>
               </div>
               <div class="col-12">
-                <h3 class="mt-3"><i class="bi bi-book"></i></h3>
+                <h3 class="mt-3">
+                  <i
+                    class="bi bi-book"
+                    style="cursor: pointer"
+                    data-bs-toggle="modal"
+                    :data-bs-target="`#tafsir-${index}`"
+                  ></i>
+                </h3>
+              </div>
+
+              <!-- Modal Tafsir -->
+              <div
+                class="modal fade"
+                :id="`tafsir-${index}`"
+                tabindex="-1"
+                aria-labelledby="tafsirLabel"
+                aria-hidden="true"
+              >
+                <div class="modal-dialog modal-dialog-scrollable">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1 class="modal-title fs-5" id="tafsirLabel">
+                        {{ surat?.namaLatin }} -
+                        {{ surat?.nama }}
+                      </h1>
+                      <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                      ></button>
+                    </div>
+                    <div class="modal-body text-pre-wrap">
+                      {{ tafsir?.tafsir[index].teks }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -276,9 +356,76 @@ function convertToArabicNumbers(number) {
 </template>
 
 <style scoped>
+.info-surat {
+  font-size: 20px;
+}
+
+.play-audio-full {
+  cursor: pointer;
+  margin: -12.5px;
+  font-size: 53px;
+}
+
+.back-surat,
+.next-surat {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.back-surat:hover,
+.next-surat:hover {
+  text-decoration: none;
+  color: #adadad;
+  cursor: pointer;
+}
+
+.next-back {
+  margin-top: -4px;
+}
+
+.btn-back-surat,
+.btn-next-surat {
+  font-size: 2rem;
+}
+
+.d-flex {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.form-control {
+  width: 100%;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-right: 2.5rem;
+}
+
+.icon-search {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.4rem;
+  z-index: 1;
+}
+
+.text-pre-wrap {
+  white-space: pre-wrap;
+}
+
 @media screen and (min-width: 768px) {
+  .play-audio-full {
+    cursor: pointer;
+    margin-top: -12.5px;
+    font-size: 53px;
+  }
   .next-back {
-    margin-top: -5px;
+    margin-top: -12.5px;
+  }
+  .btn-back-surat,
+  .btn-next-surat {
+    font-size: 2.5rem;
   }
 }
 </style>

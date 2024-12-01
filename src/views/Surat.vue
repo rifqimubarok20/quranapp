@@ -84,7 +84,7 @@ const filteredData = computed(() => {
           :key="item.nomor"
         >
           <RouterLink :to="`/surat/${item.nomor}`" class="text-decoration-none">
-            <div class="card">
+            <div class="card card-surat">
               <div class="card-body">
                 <div class="d-flex justify-content-between">
                   <h5 class="card-title">{{ item.namaLatin }}</h5>
@@ -108,3 +108,11 @@ const filteredData = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.card-surat:hover {
+  transform: scale(1.03);
+  border: 1px solid #e1e1e1;
+  box-shadow: 0 0 10px #adadad;
+}
+</style>

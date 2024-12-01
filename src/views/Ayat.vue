@@ -202,7 +202,7 @@ function convertToArabicNumbers(number) {
         </strong>
       </div>
 
-      <div class="row mb-4">
+      <div class="row py-3 bg-body shadow sticky-top rounded">
         <div class="col-md-6 col-12">
           <div class="row">
             <div class="col-10">
@@ -241,9 +241,7 @@ function convertToArabicNumbers(number) {
               aria-label="Search"
               v-model="searchQuery"
             />
-            <span class="icon-search"
-              ><i class="bi bi-search-heart-fill"></i
-            ></span>
+            <span class="icon-search"><i class="bi bi-search-heart"></i></span>
           </form>
         </div>
         <div class="col-md-2 col-3 mt-md-0 mt-2">
@@ -283,10 +281,9 @@ function convertToArabicNumbers(number) {
                   <i
                     :class="
                       playingAyat?.ayatNomor === ayat.nomorAyat
-                        ? 'bi bi-pause-btn-fill'
-                        : 'bi bi-play-btn-fill'
+                        ? 'bi bi-pause-btn-fill play-audio'
+                        : 'bi bi-play-btn-fill play-audio'
                     "
-                    style="cursor: pointer"
                     @click="
                       toggleAudioPerAyat(
                         ayat.audio[selectedQori],
@@ -299,8 +296,7 @@ function convertToArabicNumbers(number) {
               <div class="col-12">
                 <h3 class="mt-3">
                   <i
-                    class="bi bi-book"
-                    style="cursor: pointer"
+                    class="bi bi-book tafsir"
                     data-bs-toggle="modal"
                     :data-bs-target="`#tafsir-${index}`"
                   ></i>
@@ -330,6 +326,10 @@ function convertToArabicNumbers(number) {
                       ></button>
                     </div>
                     <div class="modal-body text-pre-wrap">
+                      <span
+                        class="arabic-text d-flex justify-content-end text-end"
+                        >{{ ayat.teksArab }}</span
+                      >
                       {{ tafsir?.tafsir[index].teks }}
                     </div>
                   </div>
@@ -357,13 +357,26 @@ function convertToArabicNumbers(number) {
 
 <style scoped>
 .info-surat {
+  cursor: pointer;
   font-size: 20px;
+}
+
+.play-audio {
+  cursor: pointer;
+}
+
+.play-audio:hover {
+  text-shadow: 0 0 5px #adadad;
 }
 
 .play-audio-full {
   cursor: pointer;
   margin: -12.5px;
   font-size: 53px;
+}
+
+.play-audio-full:hover {
+  text-shadow: 0 0 5px #adadad;
 }
 
 .back-surat,
@@ -375,7 +388,7 @@ function convertToArabicNumbers(number) {
 .back-surat:hover,
 .next-surat:hover {
   text-decoration: none;
-  color: #adadad;
+  text-shadow: 0 0 5px #adadad;
   cursor: pointer;
 }
 
@@ -408,6 +421,14 @@ function convertToArabicNumbers(number) {
   transform: translateY(-50%);
   font-size: 1.4rem;
   z-index: 1;
+}
+
+.tafsir {
+  cursor: pointer;
+}
+
+.tafsir:hover {
+  text-shadow: 0 0 5px #adadad;
 }
 
 .text-pre-wrap {
